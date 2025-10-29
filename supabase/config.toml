@@ -1,0 +1,5 @@
+project_id = "pfixukibsdgasmvehutm"
+
+[functions]
+# Optional region; use one close to your users
+# region = "eu-west-1"
