@@ -15,6 +15,55 @@ import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import * as Device from 'expo-device';
+import * as Application from 'expo-application';
+import * as Network from 'expo-network';
+import { SafeAreaView } from 'react-native-safe-area-context'; // ✅ UPDATED (Rule 5)
+
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen'; // ✅ UPDATED (Rule 2)
+
+import { moderateScale } from 'react-native-size-matters'; // ✅ UPDATED (Rule 4)
+
+
+
+async function callLoginEdgeFunction(userId) {
+  try {
+    let ip = '0.0.0.0';
+    try {
+      ip = await Network.getIpAddressAsync();
+    } catch {}
+
+    const deviceId =
+      Application.androidId ??
+      `${Device.osName}-${Device.modelName}-${Device.deviceYearClass}`;
+
+    const res = await supabase.functions.invoke('user-login', {
+      body: {
+        userId,
+        ip,
+        deviceId,
+        deviceType: Device.deviceType === 1 ? 'phone' : 'unknown',
+        osName: Device.osName ?? 'android',
+        osVersion: String(Device.osVersion ?? ''),
+        appVersion: Application.nativeApplicationVersion ?? '1.0.0',
+        countrySelected: 'NG', // ✅ REQUIRED
+      },
+    });
+
+    if (res.error) {
+      console.warn('Edge invoke error:', res.error.message);
+    } else {
+      console.log('✅ User session recorded:', res.data);
+    }
+  } catch (e) {
+    console.warn('Edge function failed:', e.message);
+  }
+}
+
+
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -26,18 +75,7 @@ export default function LoginScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // Clear stale sessions on mount
-  useEffect(() => {
-    (async () => {
-      try {
-        await supabase.auth.signOut();
-        await AsyncStorage.removeItem('token');
-      } catch (err) {
-        console.warn('SignOut cleanup error:', err?.message);
-      }
-    })();
-  }, []);
-
+  
   // Email/Password login
   const handleLogin = async () => {
     if (!email || !password) {
@@ -46,7 +84,7 @@ export default function LoginScreen({ navigation }) {
 
     setIsLoading(true);
     try {
-      await supabase.auth.signOut();
+
 
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
@@ -67,6 +105,9 @@ export default function LoginScreen({ navigation }) {
         Toast.show({ type: 'error', text1: 'Login failed. Account may not exist.' });
         return;
       }
+
+      // ✅ RECORD USER SESSION + FRAUD DATA
+      await callLoginEdgeFunction(data.user.id);
 
       if (rememberMe && data.session.access_token) {
         await AsyncStorage.setItem('token', data.session.access_token);
@@ -105,7 +146,7 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Image source={require('../assets/logo.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.welcome}>Welcome Back!</Text>
 
@@ -176,26 +217,133 @@ export default function LoginScreen({ navigation }) {
       <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} activeOpacity={0.7}>
         <Text style={styles.forgotText}>Forgot Password?</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
+
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000', padding: 25, justifyContent: 'center' },
-  logo: { width: 120, height: 120, alignSelf: 'center', marginTop: -55, marginBottom: 25 },
-  welcome: { fontSize: 20, color: '#fff', textAlign: 'center', marginBottom: 24, marginTop: -25, fontWeight: '600' },
-  input: { backgroundColor: '#1a1a1a', color: '#fff', padding: 12, borderRadius: 8, marginBottom: 12 },
-  passwordContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 8, paddingHorizontal: 12, marginBottom: 12 },
-  inputPassword: { flex: 1, paddingVertical: 12, color: '#fff' },
-  rememberMe: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  rememberMeText: { fontSize: 14, color: '#ccc' },
-  button: { backgroundColor: '#ce990a', paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginBottom: 16 },
-  buttonText: { color: '#000', fontWeight: '600', fontSize: 16 },
-  googleButton: { backgroundColor: '#fff', paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginBottom: 16 },
-  googleButtonContent: { flexDirection: 'row', alignItems: 'center' },
-  googleLogo: { width: 20, height: 20, marginRight: 10 },
-  googleButtonText: { color: '#000', fontWeight: '600', fontSize: 16 },
-  toggleText: { color: '#aaa', textAlign: 'center', marginBottom: 18 },
-  termsText: { color: '#ce990a', textAlign: 'center', fontSize: 14, marginBottom: 20, textDecorationLine: 'underline' },
-  forgotText: { textAlign: 'center', color: '#aaa', fontSize: 14, textDecorationLine: 'underline', marginBottom: 16 },
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+    paddingHorizontal: wp('6%'), // ✅ UPDATED
+    justifyContent: 'center',
+  },
+
+  logo: {
+    width: wp('30%'), // ✅ UPDATED
+    height: wp('30%'), // ✅ UPDATED
+    alignSelf: 'center',
+    marginTop: -hp('6%'), // ✅ UPDATED
+    marginBottom: hp('3%'), // ✅ UPDATED
+  },
+
+  welcome: {
+    fontSize: moderateScale(22), // ✅ UPDATED
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: hp('3%'), // ✅ UPDATED
+    marginTop: -hp('2%'), // ✅ UPDATED
+    fontWeight: '600',
+  },
+
+  input: {
+    backgroundColor: '#1a1a1a',
+    color: '#fff',
+    paddingVertical: hp('1.8%'), // ✅ UPDATED
+    paddingHorizontal: wp('4%'), // ✅ UPDATED
+    borderRadius: wp('2%'), // ✅ UPDATED
+    marginBottom: hp('1.5%'), // ✅ UPDATED
+    fontSize: moderateScale(14), // ✅ UPDATED
+  },
+
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1a1a',
+    borderRadius: wp('2%'), // ✅ UPDATED
+    paddingHorizontal: wp('4%'), // ✅ UPDATED
+    marginBottom: hp('1.5%'), // ✅ UPDATED
+  },
+
+  inputPassword: {
+    flex: 1,
+    paddingVertical: hp('1.8%'), // ✅ UPDATED
+    color: '#fff',
+    fontSize: moderateScale(14), // ✅ UPDATED
+  },
+
+  rememberMe: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: hp('1.5%'), // ✅ UPDATED
+    alignItems: 'center', // ✅ UPDATED
+  },
+
+  rememberMeText: {
+    fontSize: moderateScale(13), // ✅ UPDATED
+    color: '#ccc',
+  },
+
+  button: {
+    backgroundColor: '#ce990a',
+    paddingVertical: hp('2%'), // ✅ UPDATED
+    borderRadius: wp('2%'), // ✅ UPDATED
+    alignItems: 'center',
+    marginBottom: hp('2%'), // ✅ UPDATED
+  },
+
+  buttonText: {
+    color: '#000',
+    fontWeight: '600',
+    fontSize: moderateScale(16), // ✅ UPDATED
+  },
+
+  googleButton: {
+    backgroundColor: '#fff',
+    paddingVertical: hp('2%'), // ✅ UPDATED
+    borderRadius: wp('2%'), // ✅ UPDATED
+    alignItems: 'center',
+    marginBottom: hp('2%'), // ✅ UPDATED
+  },
+
+  googleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  googleLogo: {
+    width: wp('5%'), // ✅ UPDATED
+    height: wp('5%'), // ✅ UPDATED
+    marginRight: wp('3%'), // ✅ UPDATED
+  },
+
+  googleButtonText: {
+    color: '#000',
+    fontWeight: '600',
+    fontSize: moderateScale(15), // ✅ UPDATED
+  },
+
+  toggleText: {
+    color: '#aaa',
+    textAlign: 'center',
+    marginBottom: hp('2%'), // ✅ UPDATED
+    fontSize: moderateScale(13), // ✅ UPDATED
+  },
+
+  termsText: {
+    color: '#ce990a',
+    textAlign: 'center',
+    fontSize: moderateScale(12), // ✅ UPDATED
+    marginBottom: hp('2.5%'), // ✅ UPDATED
+    textDecorationLine: 'underline',
+  },
+
+  forgotText: {
+    textAlign: 'center',
+    color: '#aaa',
+    fontSize: moderateScale(12), // ✅ UPDATED
+    textDecorationLine: 'underline',
+    marginBottom: hp('2%'), // ✅ UPDATED
+  },
 });

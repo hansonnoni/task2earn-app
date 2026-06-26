@@ -17,15 +17,23 @@ import { supabase } from '../supabase';
 import { BlurView } from 'expo-blur';
 import Toast from 'react-native-toast-message';
 import { useNavigation } from '@react-navigation/native';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen'; // ✅ UPDATED
+import { moderateScale } from 'react-native-size-matters'; // ✅ UPDATED
 
 export default function DashboardScreen({ navigation }) {
   const [darkMode, setDarkMode] = useState(true);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showBalance, setShowBalance] = useState(false);
-  const [balance, setBalance] = useState(null);
+  const [balance, setBalance] = useState({ available: 0, pending: 0 });
   const [currency, setCurrency] = useState('');
   const blurAnim = useRef(new Animated.Value(1)).current; // 1 = blurred, 0 = visible
+  const [profileExists, setProfileExists] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+
 
   const backgroundColor = darkMode ? '#000' : '#fff';
   const cardColor = darkMode ? '#1c1c1c' : '#f0f0f0';
@@ -46,23 +54,45 @@ export default function DashboardScreen({ navigation }) {
       const currentUser = sessionData?.session?.user || null;
       setUser(currentUser);
 
+      if (currentUser?.id) {
+  try {
+    const { data: profileData, error: profileError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+
+    if (profileData) setProfileExists(true);
+    else setProfileExists(false);
+
+  } catch (err) {
+    console.error('Error checking profile:', err);
+    setProfileExists(false);
+  } finally {
+    setProfileLoading(false);
+  }
+}
+
+
       // 🔹 Fetch balance + currency for this user
       if (currentUser?.id) {
         try {
           const { data, error } = await supabase
-            .from('users')
-            .select('balance, currency_symbol')
-            .eq('id', currentUser.id)
-            .single();
+  .from('users')
+  .select('available_balance, pending_balance, currency_symbol')
+  .eq('id', currentUser.id)
+  .single();
 
-          if (!error && data) {
-            setBalance(data.balance);
-            setCurrency(data.currency_symbol || '');
-          } else {
-            // fallback defaults
-            setBalance(0);
-            setCurrency('');
-          }
+if (!error && data) {
+  setBalance({
+    available: data.available_balance ?? 0,
+    pending: data.pending_balance ?? 0,
+  });
+  setCurrency(data.currency_symbol || '');
+} else {
+  setBalance({ available: 0, pending: 0 });
+  setCurrency('');
+}
         } catch (err) {
           console.error('Error fetching user balance:', err);
           setBalance(0);
@@ -86,6 +116,33 @@ export default function DashboardScreen({ navigation }) {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
     loadSession();
   }, [loadSession]);
+
+  useEffect(() => {
+  if (!user?.id) return;
+
+  const subscription = supabase
+    .channel('profile-updates')               // channel name can be anything
+    .on(
+      'postgres_changes',                     // listen to database changes
+      {
+        event: 'INSERT',                      // or 'UPDATE'
+        schema: 'public',
+        table: 'users',
+        filter: `id=eq.${user.id}`,
+      },
+      (payload) => {
+        console.log('Profile created/updated:', payload);
+        setProfileExists(true);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(subscription);
+  };
+}, [user?.id]);
+
+
 
   useFocusEffect(
     useCallback(() => {
@@ -165,9 +222,74 @@ export default function DashboardScreen({ navigation }) {
           Welcome{user?.email ? `, ${user.email.split('@')[0]}` : ''} 👋
         </Text>
 
-        {/* Logout */}
+        
+      </View>
+
+      {/* Wallet Balance */}
+      {user?.email_confirmed_at && (
+        <View style={styles.walletContainer}>
+          <Text style={[styles.walletLabel, { color: textColor }]}>Available Balance</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Animated.View style={[styles.walletCard, { backgroundColor: darkMode ? '#111' : '#eee' }]}>
+  {/* Animated Blur Overlay */}
+  <Animated.View style={[StyleSheet.absoluteFill, { opacity: blurAnim }]}>
+    <BlurView
+      intensity={100}
+      tint={darkMode ? 'dark' : 'light'}
+      style={StyleSheet.absoluteFill}
+    />
+  </Animated.View>
+
+  {/* Sensitive balances container */}
+  <View style={{ alignItems: 'center' }}>
+    {/* Available Balance */}
+    <Animated.Text
+      style={[styles.amount, { color: textColor, opacity: blurAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}
+    >
+      {currency}{renderFormattedBalance(balance?.available ?? 0)}
+    </Animated.Text>
+
+    {/* Total Balance (Secondary) */}
+    <Animated.Text
+      style={{
+        fontSize: 14,
+        color: textColor,
+        opacity: blurAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+        marginTop: 4,
+      }}
+    >
+      Total: {currency}{renderFormattedBalance((balance?.available ?? 0) + (balance?.pending ?? 0))}
+      {balance?.pending > 0 ? ` (Pending: ${currency}${renderFormattedBalance(balance?.pending)})` : ''}
+    </Animated.Text>
+  </View>
+
+  {/* Blurred Dots for hide/show */}
+  <Animated.Text
+    style={[styles.amount, {
+      color: textColor,
+      position: 'absolute',
+      top: '30%', // aligns over both balances
+      opacity: blurAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }),
+    }]}
+  >
+    •••••
+  </Animated.Text>
+</Animated.View>
+
+
+<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}></View>
+            {/* Eye Icon */}
+            <Ionicons
+              name={showBalance ? 'eye' : 'eye-off'}
+              size={26}
+              color={textColor}
+              style={{ marginRight: 20 }}
+              onPress={toggleBalance}
+            />
+
+            {/* Logout */}
         <TouchableOpacity 
-          style={styles.menuItem} 
+          style={{ marginRight: 20 }} // optional spacing from screen edge
           onPress={async () => {
             try {
               const { error } = await supabase.auth.signOut();
@@ -182,115 +304,124 @@ export default function DashboardScreen({ navigation }) {
         >
           <Ionicons name="log-out-outline" size={26} color="#FFD700" />
         </TouchableOpacity>
-      </View>
-
-      {/* Wallet Balance */}
-      {user?.email_confirmed_at && (
-        <View style={styles.walletContainer}>
-          <Text style={[styles.walletLabel, { color: textColor }]}>Wallet Balance</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Animated.View style={[styles.walletCard, { backgroundColor: darkMode ? '#111' : '#eee' }]}>
-              {/* Animated Blur Overlay */}
-              <Animated.View style={[StyleSheet.absoluteFill, { opacity: blurAnim }]}>
-                <BlurView
-                  intensity={100} // thick blur
-                  tint={darkMode ? 'dark' : 'light'}
-                  style={StyleSheet.absoluteFill}
-                />
-              </Animated.View>
-
-              {/* Actual Balance */}
-              <Animated.Text
-                style={[
-                  styles.amount,
-                  {
-                    color: textColor,
-                    opacity: blurAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 0], // fade out when blurred
-                    }),
-                  },
-                ]}
-              >
-                {currency}{renderFormattedBalance(balance ?? 0)}
-              </Animated.Text>
-
-              {/* Blurred Dots */}
-              <Animated.Text
-                style={[
-                  styles.amount,
-                  {
-                    color: textColor,
-                    position: 'absolute',
-                    opacity: blurAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 1], // fade in dots when blurred
-                    }),
-                  },
-                ]}
-              >
-                •••••
-              </Animated.Text>
-            </Animated.View>
-
-            {/* Eye Icon */}
-            <Ionicons
-              name={showBalance ? 'eye' : 'eye-off'}
-              size={26}
-              color={textColor}
-              style={{ marginLeft: 10 }}
-              onPress={toggleBalance}
-            />
           </View>
         </View>
       )}
 
+      {/* Profile Completion Overlay */}
+{!profileExists && !profileLoading && (
+  <View style={styles.profileOverlay}>
+    <View style={styles.profileBox}>
+      <Ionicons
+        name="person-circle-outline"
+        size={60}
+        color="#FFD700"
+        style={{ marginBottom: 10 }}
+      />
+
+      <Text style={styles.profileTitle}>
+        Complete Your Profile
+      </Text>
+
+      <Text style={styles.profileText}>
+        You need to finish setting up your profile before you can start tasks,
+        withdraw earnings, or access other features.
+      </Text>
+
+      <TouchableOpacity
+        style={styles.profileBtn}
+        onPress={() => navigation.navigate('Profile')}
+      >
+        <Text style={styles.profileBtnText}>Go to Profile</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+)}
+
+
+
       {/* Quick Actions */}
       <View style={styles.quickActions}>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('TaskList')}>
-          <Ionicons name="list-circle" size={30} color="#4CAF50" />
-          <Text style={[styles.actionText, { color: textColor }]}>Start Task</Text>
-        </TouchableOpacity>
+        <TouchableOpacity
+  style={styles.actionBtn}
+  onPress={() => navigation.navigate('TaskList')}
+  disabled={!profileExists}
+>
+  <Ionicons name="list-circle" size={30} color="#4CAF50" />
+  <Text style={[styles.actionText, { color: textColor }]}>Start Task</Text>
+</TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Withdraw')}>
-          <MaterialIcons name="attach-money" size={30} color="#FFD700" />
-          <Text style={[styles.actionText, { color: textColor }]}>Withdraw</Text>
-        </TouchableOpacity>
+<TouchableOpacity
+  style={styles.actionBtn}
+  onPress={() => navigation.navigate('Withdraw')}
+  disabled={!profileExists}
+>
+  <MaterialIcons name="attach-money" size={30} color="#FFD700" />
+  <Text style={[styles.actionText, { color: textColor }]}>Withdraw</Text>
+</TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Submission')}>
-          <Ionicons name="checkmark-done-circle" size={30} color="#4CAF50" />
-          <Text style={[styles.actionText, { color: textColor }]}>Submit Task Proof</Text>
-        </TouchableOpacity>
-      
-        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Invite')}>
-          <MaterialIcons name="person-add-alt-1" size={30} color="#00BCD4" />
-          <Text style={[styles.actionText, { color: textColor }]}>Invite 2 Earn</Text>
-        </TouchableOpacity>
+<TouchableOpacity
+  style={styles.actionBtn}
+  onPress={() => navigation.navigate('Submission')}
+  disabled={!profileExists}
+>
+  <Ionicons name="checkmark-done-circle" size={30} color="#4CAF50" />
+  <Text style={[styles.actionText, { color: textColor }]}>Submit Task Proof</Text>
+</TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Wallet')}>
-          <Ionicons name="wallet" size={30} color="#FFA500" />
-          <Text style={[styles.actionText, { color: textColor }]}>Wallet 💼</Text>
-        </TouchableOpacity>
+<TouchableOpacity
+  style={styles.actionBtn}
+  onPress={() => navigation.navigate('Invite')}
+  disabled={!profileExists}
+>
+  <MaterialIcons name="person-add-alt-1" size={30} color="#00BCD4" />
+  <Text style={[styles.actionText, { color: textColor }]}>Invite 2 Earn</Text>
+</TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Settings')}>
-          <Ionicons name="settings" size={30} color="#888" />
-          <Text style={[styles.actionText, { color: textColor }]}>Settings</Text>
-        </TouchableOpacity>
+<TouchableOpacity
+  style={styles.actionBtn}
+  onPress={() => navigation.navigate('Wallet')}
+  disabled={!profileExists}
+>
+  <Ionicons name="wallet" size={30} color="#FFA500" />
+  <Text style={[styles.actionText, { color: textColor }]}>Wallet 💼</Text>
+</TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Notifications')}>
-          <Ionicons name="notifications-circle" size={30} color="#03A9F4" />
-          <Text style={[styles.actionText, { color: textColor }]}>Notifications</Text>
-        </TouchableOpacity>
+<TouchableOpacity
+  style={styles.actionBtn}
+  onPress={() => navigation.navigate('Settings')}
+  disabled={!profileExists}
+>
+  <Ionicons name="settings" size={30} color="#888" />
+  <Text style={[styles.actionText, { color: textColor }]}>Settings</Text>
+</TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('TermsPrivacy')}>
-          <Ionicons name="document-text" size={30} color="#bbb" />
-          <Text style={[styles.actionText, { color: textColor }]}>Terms & Privacy</Text>
-        </TouchableOpacity>
+<TouchableOpacity
+  style={styles.actionBtn}
+  onPress={() => navigation.navigate('Notifications')}
+  disabled={!profileExists}
+>
+  <Ionicons name="notifications-circle" size={30} color="#03A9F4" />
+  <Text style={[styles.actionText, { color: textColor }]}>Notifications</Text>
+</TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Support')}>
-          <Ionicons name="help-circle" size={30} color="#9C27B0" />
-          <Text style={[styles.actionText, { color: textColor }]}>Support</Text>
-        </TouchableOpacity>
+<TouchableOpacity
+  style={styles.actionBtn}
+  onPress={() => navigation.navigate('TermsPrivacy')}
+  disabled={!profileExists}
+>
+  <Ionicons name="document-text" size={30} color="#bbb" />
+  <Text style={[styles.actionText, { color: textColor }]}>Terms & Privacy</Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+  style={styles.actionBtn}
+  onPress={() => navigation.navigate('Support')}
+  disabled={!profileExists}
+>
+  <Ionicons name="help-circle" size={30} color="#9C27B0" />
+  <Text style={[styles.actionText, { color: textColor }]}>Support</Text>
+</TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -298,7 +429,9 @@ export default function DashboardScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 50,
+    paddingTop: hp('6%'), // add some space from the top
+    paddingHorizontal: wp('5%'),
+    paddingBottom: hp('5%'),
     flexGrow: 1,
   },
   centered: {
@@ -307,78 +440,118 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 22,
+    fontSize: moderateScale(22),
     fontWeight: 'bold',
-    marginBottom: 25,
+    marginBottom: hp('2%'),
   },
   logout: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: wp('10%'),
+    height: wp('10%'),
+    borderRadius: wp('5%'),
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: wp('2%'),
   },
   walletContainer: {
-    marginVertical: 15,
+    marginVertical: hp('2%'),
   },
   walletLabel: {
-    fontSize: 14,
-    marginBottom: 6,
+    fontSize: moderateScale(14),
+    marginBottom: hp('0.5%'),
   },
   walletCard: {
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    minWidth: 120,
+    borderRadius: wp('3%'),
+    paddingVertical: hp('1%'),
+    paddingHorizontal: wp('4%'),
+    minWidth: wp('40%'),
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    marginRight: 5,
+    marginRight: wp('2%'),
   },
   cardRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: hp('2%'),
   },
   card: {
-    borderRadius: 10,
-    padding: 5,
+    borderRadius: wp('2%'),
+    padding: wp('1%'),
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     flex: 1,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: '600',
-    marginBottom: 5,
+    marginBottom: hp('0.5%'),
   },
   amount: {
-    fontSize: 28,
+    fontSize: moderateScale(28),
     fontWeight: 'bold',
   },
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: hp('2%'),
     flexWrap: 'wrap',
   },
   actionBtn: {
     alignItems: 'center',
     width: '30%',
-    marginVertical: 10,
+    marginVertical: hp('1%'),
   },
   actionText: {
-    marginTop: 5,
-    fontSize: 12,
+    marginTop: hp('0.5%'),
+    fontSize: moderateScale(12),
     textAlign: 'center',
   },
   verifyButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 25,
-    borderRadius: 10,
+    paddingVertical: hp('1.5%'),
+    paddingHorizontal: wp('4%'),
+    borderRadius: wp('2%'),
     alignItems: 'center',
+  },
+
+  // ✅ Profile Overlay
+  profileOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+    padding: wp('4%'),
+  },
+  profileBox: {
+    backgroundColor: '#1c1c1c', // use darkMode toggle in code if needed
+    borderRadius: wp('3%'),
+    padding: wp('5%'),
+    alignItems: 'center',
+  },
+  profileTitle: {
+    fontSize: moderateScale(18),
+    fontWeight: 'bold',
+    marginBottom: hp('1%'),
+    textAlign: 'center',
+    color: '#FFD700',
+  },
+  profileText: {
+    fontSize: moderateScale(14),
+    textAlign: 'center',
+    marginBottom: hp('2%'),
+    color: '#fff',
+  },
+  profileBtn: {
+    paddingVertical: hp('1.5%'),
+    paddingHorizontal: wp('4%'),
+    borderRadius: wp('2%'),
+    backgroundColor: '#FFD700',
+  },
+  profileBtnText: {
+    fontSize: moderateScale(14),
+    fontWeight: 'bold',
+    color: '#000',
   },
 });

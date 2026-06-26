@@ -42,7 +42,7 @@ export default function SplashScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Animated.Image
-        source={require('../assets/task2earn-logo.png')}
+        source={require('../assets/splash.png')}
         style={[styles.logo, { opacity: opacityAnim }]}
         resizeMode="contain"
       />

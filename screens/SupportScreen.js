@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native'
 
 export default function SupportScreen() {
   const handleContact = () => {
-    Linking.openURL('mailto:support@task2earn.com?subject=Support Request');
+    Linking.openURL('mailto:support@task2earn.app?subject=Support Request');
   };
 
   return (

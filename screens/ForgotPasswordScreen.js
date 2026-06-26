@@ -1,20 +1,40 @@
 // screens/ForgotPasswordScreen.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { supabase } from '../supabase';
 
 export default function ForgotPasswordScreen({ navigation }) {
   const [email, setEmail] = useState('');
 
-  const handleResetPassword = () => {
-    if (!email) {
-      Alert.alert('Error', 'Please enter your email address');
+  const handleResetPassword = async () => {
+  if (!email) {
+    Alert.alert('Error', 'Please enter your email address');
+    return;
+  }
+
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      email,
+      {
+        redirectTo: 'task2earn://reset-password',
+      }
+    );
+
+    if (error) {
+      Alert.alert('Error', error.message);
       return;
     }
 
-    // Simulate sending reset email
-    Alert.alert('Reset Link Sent', `A reset link has been sent to ${email}`);
-    navigation.goBack(); // Or redirect to Login
-  };
+    Alert.alert(
+      'Success',
+      'Password reset email has been sent.'
+    );
+
+    navigation.goBack();
+  } catch (err) {
+    Alert.alert('Error', err.message);
+  }
+};
 
   return (
     <View style={styles.container}>
