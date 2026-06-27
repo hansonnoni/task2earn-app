@@ -5,7 +5,8 @@ View,
 Text,
 TouchableOpacity,
 ActivityIndicator,
-Alert
+Alert,
+Platform
 }
 from "react-native";
 
@@ -155,7 +156,30 @@ loadStatus();
 
 },[]);
 
+useEffect(() => {
+  if (Platform.OS === "web") {
+    const params = new URLSearchParams(window.location.search);
 
+    if (params.get("connected") === "1") {
+      loadStatus();
+
+      setSuccessMessage(
+        "TikTok account connected successfully."
+      );
+
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 5000);
+
+      // Optional: remove ?connected=1 from the URL
+      window.history.replaceState(
+        {},
+        "",
+        "/TiktokConnect"
+      );
+    }
+  }
+}, []);
 
 
 useEffect(()=>{
@@ -240,9 +264,9 @@ const connectTikTok = async () => {
             user_id: user.id,
 
             origin:
-              typeof window !== "undefined"
-                ? window.location.origin
-                : null,
+  Platform.OS === "web"
+    ? window.location.href
+    : null,
 
             app_redirect:
               appRedirect,
