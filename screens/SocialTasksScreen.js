@@ -146,7 +146,7 @@ const SocialTasksScreen = ({ route }) => {
 
   const fetchTasksForCountry = async (countryId, existingUser = null) => {
   setLoading(true);
-  setMessage('Loading tasks...');
+  setMessage('Loading Campaigns...');
   try {
     const profile = existingUser;
     if (!profile && !existingUser) {
@@ -220,7 +220,7 @@ const rejectedIds = rejectedTasks?.map(t => t.task_id) || [];
     if (error) throw error;
 
     if (!data || data.length === 0) {
-      setMessage('ℹ️ No available tasks right now!');
+      setMessage('ℹ️ No Active Campaigns right now!');
       setTasks([]);
       setFilteredTasks([]);
     } else {
@@ -275,7 +275,7 @@ setFilteredTasks(updatedTasks);
     if (isTaskPremium(task) && isUserFree()) {
       Alert.alert(
         'Upgrade Required',
-        'This task is for premium members only. Upgrade to access it.',
+        'This campaign is available exclusively to Premium members. Upgrade your account to participate.',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Upgrade Now', onPress: () => navigation.navigate('UpgradeScreen') },
@@ -363,14 +363,14 @@ setFilteredTasks(updatedTasks);
     <View style={styles.container}>
       <TextInput
         style={styles.searchInput}
-        placeholder="🔍 Search tasks..."
+        placeholder="🔍 Search Campaigns..."
         placeholderTextColor="#999"
         value={search}
         onChangeText={setSearch}
       />
 
       <View style={styles.headerRow}>
-        <Text style={styles.header}>Available Tasks</Text>
+        <Text style={styles.header}>🔥 Featured Campaigns 🎯</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <FontAwesome5 name="arrow-right" size={16} color="#FFD700" />
           <Text style={styles.backText}>Back</Text>

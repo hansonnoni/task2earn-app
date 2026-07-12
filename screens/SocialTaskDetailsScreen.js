@@ -53,7 +53,8 @@ const validatePlatformUrl = (platform, url) => {
   const rules = {
   facebook: /facebook\.com/i,
   instagram: /instagram\.com/i,
-  tiktok: /(tiktok\.com|vt\.tiktok\.com)/i,
+  tiktok:
+/(www\.tiktok\.com|m\.tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com|tiktok\.com)/i,
   youtube:
   /(^https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|m\.youtube\.com)/i,
   twitter: /(twitter\.com|x\.com)/i,
@@ -156,7 +157,7 @@ const SocialTaskDetailsScreen = () => {
         }
 
         if (!currentTask) {
-          Alert.alert("Task Unavailable", "This task could not be found.");
+          Alert.alert("Campaign Unavailable", "This Campaign could not be found.");
           navigation.goBack();
           return;
         }
@@ -170,7 +171,7 @@ const SocialTaskDetailsScreen = () => {
         }
       } catch (err) {
         console.error("[Load Task Error]", err);
-        Alert.alert("Error", "Unable to load this task.");
+        Alert.alert("Error", "Unable to load this Campaign.");
       }
     };
 
@@ -354,7 +355,7 @@ const SocialTaskDetailsScreen = () => {
     };
   }, [isStarted, isFinished, task, user]);
 
-  // --- Start Task Confirmation ---
+  // --- Join Campaign Confirmation ---
   const handleStartTask = async () => {
   try {
     let shouldStart = false;
@@ -362,7 +363,7 @@ const SocialTaskDetailsScreen = () => {
     // ✅ WEB VERSION
     if (Platform.OS === "web") {
       shouldStart = window.confirm(
-        "Do you want to start this task? The timer will begin counting down."
+        "Do you want to start this Campaign? The timer will begin counting down."
       );
     }
 
@@ -371,7 +372,7 @@ const SocialTaskDetailsScreen = () => {
       shouldStart = await new Promise((resolve) => {
         Alert.alert(
           "Start Task",
-          "Do you want to start this task? The timer will begin counting down.",
+          "Do you want to start this Campaign? The timer will begin counting down.",
           [
             {
               text: "No",
@@ -449,11 +450,11 @@ const SocialTaskDetailsScreen = () => {
     }
 
   } catch (err) {
-    console.error("[Start Task Error]", err);
+    console.error("[Start Campaign Error]", err);
 
     Alert.alert(
       "Error",
-      err.message || "Could not start task"
+      err.message || "Could not start Campaign"
     );
   }
 };
@@ -494,7 +495,7 @@ if (
 ) {
   Alert.alert(
     "Incorrect Link",
-    `The proof link must be a ${task.platform} URL`
+    `Please paste a valid ${task.platform} post or video link.`
   );
 
   return;
@@ -528,6 +529,8 @@ if (proofUrl) {
 
   if (functionName) {
     console.log("Calling function:", functionName);
+
+    console.log("Proof URL:", proofUrl);
 
     const { data, error } =
       await supabase.functions.invoke(
@@ -683,12 +686,12 @@ await submitTask();
 
   if (Platform.OS === "web") {
     window.alert(
-      err?.message || "Could not submit task"
+      err?.message || "Could not submit Campaign"
     );
   } else {
     Alert.alert(
       "Error",
-      err?.message || "Could not submit task"
+      err?.message || "Could not submit Campaign"
     );
   }
 } finally {
@@ -724,17 +727,17 @@ await submitTask();
 
         {/* Task ID Row */}
         <View style={styles.idRow}>
-          <Text style={styles.label}>Task ID:</Text>
+          <Text style={styles.label}>Campaign ID:</Text>
           <Text style={styles.taskId}>{shortId}</Text>
         </View>
 
         {/* Description */}
-        <Text style={styles.label}>Description</Text>
+        <Text style={styles.label}>Campaign Instruction</Text>
         <Text style={styles.description}>{task?.description}</Text>
 
         {/* Info Boxes */}
         <View style={styles.infoBox}>
-          <Text style={styles.label}>Platform:</Text>
+          <Text style={styles.label}>Campaign Platform:</Text>
           <Text style={styles.value}>{task?.platform}</Text>
         </View>
 
@@ -744,7 +747,7 @@ await submitTask();
         </View>
 
         <View style={styles.infoBox}>
-          <Text style={styles.label}>Reward:</Text>
+          <Text style={styles.label}>Campaign Reward:</Text>
           <Text style={[styles.value, styles.gold]}>
             {currency}
             {task?.reward}
@@ -760,7 +763,7 @@ await submitTask();
         <Text style={styles.label}>Proof URL</Text>
         <TextInput
           style={styles.input}
-          placeholder="Enter proof link"
+          placeholder="Paste the TikTok video link copied from TikTok"
           placeholderTextColor="#777"
           value={proofUrl}
           onChangeText={setProofUrl}
@@ -771,7 +774,7 @@ await submitTask();
         {!isStarted && !isFinished && (
           <TouchableOpacity style={styles.startButton} onPress={handleStartTask}>
             <FontAwesome5 name="play" size={16} color="#000" />
-            <Text style={styles.startButtonText}>Start Task</Text>
+            <Text style={styles.startButtonText}>Join Campaign</Text>
           </TouchableOpacity>
         )}
 
@@ -781,12 +784,12 @@ await submitTask();
             onPress={() => {
               // open link and rely on AppState listener to reload when user returns
               Linking.openURL(task?.url).catch(() =>
-                Alert.alert("Error", "Unable to open the task link.")
+                Alert.alert("Error", "Unable to open the Campaign link.")
               );
             }}
           >
             <FontAwesome5 name="external-link-alt" size={16} color="#FFD700" />
-            <Text style={styles.linkButtonText}>Open Task Link</Text>
+            <Text style={styles.linkButtonText}>Open Campaign Link</Text>
           </TouchableOpacity>
         )}
 
@@ -797,7 +800,7 @@ await submitTask();
             ) : (
               <>
                 <FontAwesome5 name="check" size={16} color="#000" />
-                <Text style={styles.submitButtonText}>Submit Task</Text>
+                <Text style={styles.submitButtonText}>Submit Campaign</Text>
               </>
             )}
           </TouchableOpacity>
