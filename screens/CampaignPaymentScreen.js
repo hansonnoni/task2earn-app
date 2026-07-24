@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 
 import { supabase } from "../supabase";
@@ -13,10 +14,13 @@ import { supabase } from "../supabase";
 export default function CampaignPaymentScreen({ route, navigation }) {
 
   const { campaignId } = route.params;
+  console.log("Campaign ID:", campaignId);
 
   const [campaign, setCampaign] = useState(null);
+const [loadingCampaign, setLoadingCampaign] = useState(true);
 
 const [loading, setLoading] = useState(false);
+
 const reward =
 Number(campaign?.reward || 0);
 
@@ -39,20 +43,24 @@ budget + platformFee;
   }, []);
 
   const loadCampaign = async () => {
-
-    const { data } = await supabase
-
+  try {
+    const { data, error } = await supabase
       .from("create_campaigns")
-
       .select("*")
-
       .eq("id", campaignId)
-
       .single();
 
-    setCampaign(data);
+    if (error) throw error;
 
-  };
+    setCampaign(data);
+    console.log(data);
+
+  } catch (err) {
+    Alert.alert("Error", err.message);
+  } finally {
+    setLoadingCampaign(false);
+  }
+};
 
   const payNow = async () => {
 
@@ -95,6 +103,17 @@ budget + platformFee;
 
 };
 
+if (loadingCampaign) {
+    return (
+        <View style={styles.container}>
+            <ActivityIndicator
+                size="large"
+                color="#FFD700"
+            />
+        </View>
+    );
+}
+
   return (
 
     <View style={styles.container}>
@@ -111,7 +130,7 @@ budget + platformFee;
 
       <Text style={styles.money}>
 
-        ₦{campaign.total_budget.toLocaleString()}
+        ₦{total.toLocaleString()}
 
       </Text>
 

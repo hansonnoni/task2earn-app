@@ -23,6 +23,7 @@ import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
 // Other Screens
 import MyCampaignsScreen from './screens/MyCampaignsScreen';
 import DepositCampaignScreen from './screens/DepositCampaignScreen';
+import FlutterwaveCheckoutScreen from './screens/FlutterwaveCheckoutScreen';
 import MyCampaignDetailsScreen from './screens/MyCampaignDetailsScreen';
 
 import CampaignPaymentScreen from './screens/CampaignPaymentScreen';
@@ -169,6 +170,7 @@ export default function AppNavigator() {
       <Stack.Screen name="MyCampaigns" component={MyCampaignsScreen} />
       <Stack.Screen name="MyCampaignDetails" component={MyCampaignDetailsScreen} />
       <Stack.Screen name="DepositCampaign" component={DepositCampaignScreen} />
+      <Stack.Screen name="FlutterwaveCheckout" component={FlutterwaveCheckoutScreen} />
       
       <Stack.Screen name="SocialSubmissionsScreen" component={SocialSubmissionsScreen} />
       <Stack.Screen name="SpotifyTasks" component={SpotifyTasksScreen} options={{ title: 'Spotify Tasks' }} />
