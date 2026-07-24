@@ -342,13 +342,44 @@ if (!error && data) {
 
       {/* Quick Actions */}
       <View style={styles.quickActions}>
+
+        <TouchableOpacity
+  style={styles.actionBtn}
+  onPress={() => navigation.navigate("CreateCampaign")}
+  disabled={!profileExists}
+>
+  <Ionicons
+    name="add-circle"
+    size={30}
+    color="#FFD700"
+  />
+
+  <Text
+    style={[
+      styles.actionText,
+      { color: textColor }
+    ]}
+  >
+    Create Campaign
+  </Text>
+</TouchableOpacity>
+
         <TouchableOpacity
   style={styles.actionBtn}
   onPress={() => navigation.navigate('TaskList')}
   disabled={!profileExists}
 >
   <Ionicons name="list-circle" size={30} color="#4CAF50" />
-  <Text style={[styles.actionText, { color: textColor }]}>Start Task</Text>
+  <Text style={[styles.actionText, { color: textColor }]}>Join Campaigns</Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+  style={styles.actionBtn}
+  onPress={() => navigation.navigate('MyCampaigns')}
+  disabled={!profileExists}
+>
+  <Ionicons name="list" size={30} color="#1c1d1c" />
+  <Text style={[styles.actionText, { color: textColor }]}>My Campaigns</Text>
 </TouchableOpacity>
 
 <TouchableOpacity
@@ -366,7 +397,7 @@ if (!error && data) {
   disabled={!profileExists}
 >
   <Ionicons name="checkmark-done-circle" size={30} color="#4CAF50" />
-  <Text style={[styles.actionText, { color: textColor }]}>Submit Task Proof</Text>
+  <Text style={[styles.actionText, { color: textColor }]}>My Campaign Submissions</Text>
 </TouchableOpacity>
 
 <TouchableOpacity

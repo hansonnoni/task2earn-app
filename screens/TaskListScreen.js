@@ -9,31 +9,18 @@ const TaskListScreen = () => {
 
   const categories = [
     {
-      name: 'Social Tasks',
+      name: 'Social Campaigns',
       key: 'social',
       icon: 'thumbs-up',
-      screen: 'SocialTasks',
+      screen: 'Campaigns',
       color: '#3b82f6',
     },
-    {
-      name: 'Spotify Tasks',
-      key: 'spotify',
-      icon: 'spotify',
-      screen: 'SpotifyTasks',
-      color: '#1DB954',
-    },
-    {
-      name: 'YouTube Tasks',
-      key: 'youtube',
-      icon: 'youtube',
-      screen: 'YouTubeTasks',
-      color: '#FF0000',
-    },
+    
   ];
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Select Task Category</Text>
+      <Text style={styles.header}>Select Campaign Category</Text>
       {categories.map((cat) => (
         <TouchableOpacity
           key={cat.key}

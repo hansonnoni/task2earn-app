@@ -21,9 +21,10 @@ import { FontAwesome5 } from '@expo/vector-icons';
 const PLATFORM_ICONS = {
   facebook: { name: 'facebook', color: '#1877F2' },
   instagram: { name: 'instagram', color: '#E1306C' },
-  tiktok: { name: 'music', color: '#000' },
+  tiktok: { name: 'tiktok', color: '#000' },
   x: { name: 'twitter', color: '#1DA1F2' },
   twitter: { name: 'twitter', color: '#1DA1F2' },
+  youtube: { name: 'youtube', color: '#df0b0b' },
   default: { name: 'globe', color: '#999' },
 };
 
@@ -116,15 +117,15 @@ const SocialTasksScreen = ({ route }) => {
     let mounted = true;
     const load = async () => {
       setLoading(true);
-      setMessage('Loading user...');
+      setMessage('Loading your account...');
       try {
         const profile = await fetchUser();
         if (!mounted) return;
         if (profile) {
-          setMessage('Loading tasks...');
+          setMessage('Loading Campaigns...');
           await fetchTasksForCountry(profile.country_id, profile);
         } else {
-          setMessage('❌ No logged-in user found.');
+          setMessage('❌ No logged-in account found.');
           setTasks([]);
           setFilteredTasks([]);
         }
@@ -150,7 +151,7 @@ const SocialTasksScreen = ({ route }) => {
   try {
     const profile = existingUser;
     if (!profile && !existingUser) {
-      setMessage('❌ No logged-in user found.');
+      setMessage('❌ No logged-in account found.');
       setTasks([]);
       setFilteredTasks([]);
       return;
@@ -275,7 +276,7 @@ setFilteredTasks(updatedTasks);
     if (isTaskPremium(task) && isUserFree()) {
       Alert.alert(
         'Upgrade Required',
-        'This campaign is available exclusively to Premium members. Upgrade your account to participate.',
+        'This campaign is available exclusively to Premium Creators. Upgrade your account to participate.',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Upgrade Now', onPress: () => navigation.navigate('UpgradeScreen') },
@@ -284,7 +285,7 @@ setFilteredTasks(updatedTasks);
       return;
     }
 
-    navigation.navigate('SocialTaskDetails', { taskId: task.id, task, user, setUser });
+    navigation.navigate('CampaignDetails', { taskId: task.id, task, user, setUser });
   };
 
   const keyExtractor = (item) => String(item.id);
@@ -314,11 +315,11 @@ setFilteredTasks(updatedTasks);
               {premium ? (
                 <View style={styles.badge}>
                   <FontAwesome5 name="crown" size={12} color="#FFD700" />
-                  <Text style={styles.badgeText}>Premium</Text>
+                  <Text style={styles.badgeText}>Premium Campaign</Text>
                 </View>
               ) : (
                 <View style={[styles.badge, { backgroundColor: '#0b1220' }]}>
-                  <Text style={[styles.badgeText, { color: '#9ae6b4' }]}>Free</Text>
+                  <Text style={[styles.badgeText, { color: '#9ae6b4' }]}>Free Campaign</Text>
                 </View>
               )}
             </View>
@@ -327,7 +328,7 @@ setFilteredTasks(updatedTasks);
           <Text style={styles.description}>{highlightText(item.description, search)}</Text>
           {item.wasRejected && (
   <Text style={{ color: '#ff4d4f', fontSize: 12, marginTop: 4 }}>
-    ⚠️ Previously Rejected – Please correct and resubmit
+    ⚠️ Campaign Requires Revision – Please update your content and submit again.
   </Text>
 )}
 
@@ -370,7 +371,7 @@ setFilteredTasks(updatedTasks);
       />
 
       <View style={styles.headerRow}>
-        <Text style={styles.header}>🔥 Featured Campaigns 🎯</Text>
+        <Text style={styles.header}>🔥 Active Campaigns 🎯</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <FontAwesome5 name="arrow-right" size={16} color="#FFD700" />
           <Text style={styles.backText}>Back</Text>

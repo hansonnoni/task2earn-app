@@ -21,7 +21,12 @@ import ResetPasswordScreen from './screens/ResetPasswordScreen';
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
 
 // Other Screens
-import SocialTaskDetailsScreen from './screens/SocialTaskDetailsScreen';
+import MyCampaignsScreen from './screens/MyCampaignsScreen';
+import DepositCampaignScreen from './screens/DepositCampaignScreen';
+import MyCampaignDetailsScreen from './screens/MyCampaignDetailsScreen';
+
+import CampaignPaymentScreen from './screens/CampaignPaymentScreen';
+import CampaignDetailsScreen from './screens/CampaignDetailsScreen';
 import SubmissionScreen from './screens/SubmissionScreen';
 import SocialSubmissionsScreen from "./screens/SocialSubmissionsScreen";
 import SocialAccountsScreen from './screens/SocialAccountsScreen';
@@ -29,7 +34,7 @@ import SpotifySubmissionScreen from "./screens/SpotifySubmissionScreen";
 import YouTubeSubmissionScreen from "./screens/YouTubeSubmissionScreen";
 import WithdrawScreen from './screens/WithdrawScreen';
 import TaskListScreen from './screens/TaskListScreen';
-import SocialTasksScreen from './screens/SocialTasksScreen';
+import CampaignsScreen from './screens/CampaignsScreen';
 import SpotifyTasksScreen from './screens/SpotifyTasksScreen';
 import YouTubeTasksScreen from './screens/YouTubeTasksScreen';
 import WalletScreen from './screens/WalletScreen';
@@ -41,6 +46,7 @@ import NotificationScreen from './screens/NotificationScreen';
 import TermsPrivacyScreen from './screens/TermsPrivacyScreen';
 import UpgradeScreen from './screens/UpgradeScreen';
 import PerformanceScreen from './screens/PerformanceScreen';
+import CreateCampaignScreen from './screens/CreateCampaignScreen';
 
 
 const Tab = createBottomTabNavigator();
@@ -151,10 +157,19 @@ export default function AppNavigator() {
       
       <Stack.Screen name="UpgradeScreen" component={UpgradeScreen} />
       <Stack.Screen name="Performance" component={PerformanceScreen} />
+      <Stack.Screen name="CreateCampaign" component={CreateCampaignScreen} />
       <Stack.Screen name="TermsPrivacy" component={TermsPrivacyScreen} />
-      {/* Dedicated task category screens */}
-      <Stack.Screen name="SocialTasks" component={SocialTasksScreen} options={{ title: 'Social Tasks' }} />
-      <Stack.Screen name="SocialTaskDetails" component={SocialTaskDetailsScreen} />
+      {/* Dedicated Campaign category screens */}
+      <Stack.Screen name="Campaigns" component={CampaignsScreen} />
+      <Stack.Screen
+    name="CampaignPayment"
+    component={CampaignPaymentScreen}
+/>
+      <Stack.Screen name="CampaignDetails" component={CampaignDetailsScreen} />
+      <Stack.Screen name="MyCampaigns" component={MyCampaignsScreen} />
+      <Stack.Screen name="MyCampaignDetails" component={MyCampaignDetailsScreen} />
+      <Stack.Screen name="DepositCampaign" component={DepositCampaignScreen} />
+      
       <Stack.Screen name="SocialSubmissionsScreen" component={SocialSubmissionsScreen} />
       <Stack.Screen name="SpotifyTasks" component={SpotifyTasksScreen} options={{ title: 'Spotify Tasks' }} />
       <Stack.Screen name="YouTubeTasks" component={YouTubeTasksScreen} options={{ title: 'YouTube Tasks' }} />  

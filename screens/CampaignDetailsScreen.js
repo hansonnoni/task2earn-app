@@ -28,10 +28,23 @@ const PLATFORM_ICONS = {
   facebook: { name: "facebook", color: "#1877F2" },
   instagram: { name: "instagram", color: "#E1306C" },
   youtube: { name: "youtube", color: "#FF0000" },
-  tiktok: { name: "music", color: "#000" },
+  tiktok: { name: "tiktok", color: "#000" },
   x: { name: "twitter", color: "#1DA1F2" },
   twitter: { name: "twitter", color: "#1DA1F2" },
   default: { name: "globe", color: "#999" },
+};
+
+const CAMPAIGN_TYPES = {
+  create_video: "🎥 Create a Video",
+  upload_video: "📹 Upload a Video",
+  follow: "➕ Follow an Account",
+  comment: "💬 Leave a Meaningful Comment",
+  watch: "▶ Watch a Video",
+  like: "❤️ Like a Post",
+  share: "📤 Share a Post",
+  stream_music: "🎵 Stream the Song",
+  playlist_add: "🎶 Add to Playlist",
+  review: "⭐ Write a Review",
 };
 
 // Helper to format time as mm:ss
@@ -363,7 +376,7 @@ const SocialTaskDetailsScreen = () => {
     // ✅ WEB VERSION
     if (Platform.OS === "web") {
       shouldStart = window.confirm(
-        "Do you want to start this Campaign? The timer will begin counting down."
+        "Do you want to  this join Campaign? The timer will begin counting down."
       );
     }
 
@@ -372,7 +385,7 @@ const SocialTaskDetailsScreen = () => {
       shouldStart = await new Promise((resolve) => {
         Alert.alert(
           "Start Task",
-          "Do you want to start this Campaign? The timer will begin counting down.",
+          "Do you want to join this Campaign? The timer will begin counting down.",
           [
             {
               text: "No",
@@ -637,7 +650,7 @@ verificationResult || null,
         console.warn("❌ Edge function logging failed:", err.message);
       }
 
-      Alert.alert("Success", "Task submitted!");
+      Alert.alert("Success", "Your campaign submission has been received and is now under review");
       navigation.replace("SocialSubmissionsScreen");
     };
 
@@ -721,7 +734,7 @@ await submitTask();
 
         {/* Title */}
         <View style={styles.headerRow}>
-          <Text style={styles.title}>{task?.title || "Task"}</Text>
+          <Text style={styles.title}>{task?.title || "Campaign"}</Text>
           <FontAwesome5 name={platformMeta.name} size={22} color={platformMeta.color} />
         </View>
 
@@ -732,7 +745,7 @@ await submitTask();
         </View>
 
         {/* Description */}
-        <Text style={styles.label}>Campaign Instruction</Text>
+        <Text style={styles.label}>🎯 Campaign Mission</Text>
         <Text style={styles.description}>{task?.description}</Text>
 
         {/* Info Boxes */}
@@ -742,8 +755,12 @@ await submitTask();
         </View>
 
         <View style={styles.infoBox}>
-          <Text style={styles.label}>Action:</Text>
-          <Text style={styles.value}>{task?.action_type}</Text>
+          <Text style={styles.label}>Campaign Type:</Text>
+          
+          <Text style={styles.value}>
+    {CAMPAIGN_TYPES[task?.action_type?.toLowerCase()] ||
+      task?.action_type}
+  </Text>
         </View>
 
         <View style={styles.infoBox}>
@@ -756,14 +773,14 @@ await submitTask();
 
         {/* Timer always visible */}
         <View style={styles.timerBox}>
-          <Text style={styles.timerText}>⏳ Time Remaining: {formatTime(timer)}</Text>
+          <Text style={styles.timerText}>⏳ Campaign Time Remaining: {formatTime(timer)}</Text>
         </View>
 
         {/* Proof URL */}
-        <Text style={styles.label}>Proof URL</Text>
+        <Text style={styles.label}>Proof Link</Text>
         <TextInput
           style={styles.input}
-          placeholder="Paste the TikTok video link copied from TikTok"
+          placeholder="Paste your Campaign Proof Link "
           placeholderTextColor="#777"
           value={proofUrl}
           onChangeText={setProofUrl}
